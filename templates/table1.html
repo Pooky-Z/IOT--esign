@@ -1,0 +1,206 @@
+
+<html lang="zh-CN">
+        
+{% extends './main.html' %}
+
+{% block div1 %}
+<p style="margin-left:170px;height:2%">体检实到人数/体检应到人数：<b id="validnumber" style="color:firebrick">{{ validnumber }}</b> /<b id="allnumber" style="color:darkblue">{{ allnumber }}</b></p>
+<p id="time">{{ time }}</p>
+<p id="count">{{ count }}</p>
+<div style="width:100%;height:93%;overflow:auto;">
+<table id="table1">
+    <thead style="overflow:hidden">
+        <tr style="overflow:hidden">
+            <td>ID</td>
+            <td>姓名</td>
+            <td>性别</td>
+            <td>体检时间</td>
+        </tr>
+    </thead>
+    <tbody>
+       {% for person in unvalid_persons %}
+        <tr>
+            <td style="color:crimson">{{person.id}}</td>
+            <td style="color:crimson">{{person.name}}</td>
+            <td style="color:crimson">{{person.gender}}</td>
+            <td style="color:crimson">未到</td>
+        </tr>
+        {% endfor %}
+        {% for person in valid_persons %}
+        <tr>
+            <td>{{person.id}}</td>
+            <td>{{person.name}}</td>
+            <td>{{person.gender}}</td>
+            <td>{{person.time}}</td>
+        </tr>
+        {% endfor %}
+        
+    </tbody>
+</table>
+</div>
+<script>
+    function getLength(){
+        length=$("#table1").find("tr").length;
+        return length;
+    }   
+    function update(){
+        $.post("/","",
+            function(data){
+                console.log(data);
+            })
+    }
+    (function () {
+        length=getLength();
+        update();
+        
+        
+    })();
+            
+           
+        </script>
+{% endblock %}
+{% block div2 %}
+<div id="piechart" style="margin-top:10px;margin-left:10px;width: 96%;height:50%;"></div>
+<div id="histogram" style="margin-top:20px;margin-left:10px;width: 96%;height:50%;"></div>
+<script type="text/javascript">
+count=$("#count").text().slice(1,-1).split(",");
+console.log($("#count").text());
+function date(){
+    dates=[]
+    time=$("#time").text().slice(1,-1).split(",");
+    for(i=0;i<time.length;i++){
+        console.log(time[i]);
+        if(time[i][0]==" "){
+            time[i]=time[i].slice(1,);
+        }
+        console.log(time);
+    }
+    for(i=0;i<time.length-1;i++){
+        date=time[i].slice(1,-1)+"~"+time[i+1].slice(1,-1);
+        console.log(date);
+        dates[i]=date;
+    }
+    return dates;
+}
+
+    // 基于准备好的dom，初始化echarts实例
+var Chart1 = echarts.init(document.getElementById('piechart'));
+var validnumber=$("#validnumber").text();
+var allnumber=$("#allnumber").text();
+option1 = {
+title : {
+    text: '签到人数',
+    subtext: '真实可信，童叟无欺',
+    x:'center'
+},
+tooltip : {
+    trigger: 'item',
+    formatter: "{a} <br/>{b} : {c} ({d}%)"
+},
+legend: {
+    orient : 'vertical',
+    x : 'left',
+    data:['来','没来']
+},
+toolbox: {
+    show : true,
+    feature : {
+        mark : {show: true},
+        dataView : {show: true, readOnly: false},
+        magicType : {
+            show: true, 
+            type: ['pie', 'funnel'],
+            option: {
+                funnel: {
+                    x: '25%',
+                    width: '50%',
+                    funnelAlign: 'left',
+                    max: 1548
+                }
+            }
+        },
+        restore : {show: true},
+        saveAsImage : {show: true}
+    }
+},
+calculable : true,
+series : [
+    {
+        name:'人数',
+        type:'pie',
+        radius : '55%',
+        center: ['50%', '60%'],
+        data:[
+            {value:parseInt(validnumber), name:'来'},
+            {value:parseInt(allnumber)-parseInt(validnumber), name:'没来'},
+        ]
+    }
+]
+};
+// 使用刚指定的配置项和数据显示图表。
+Chart1.setOption(option1);
+
+var Chart2 = echarts.init(document.getElementById('histogram'));
+
+var dates=date();
+console.log(dates);
+option2 = {
+    title : {
+        text: '体检人数统计',
+        subtext: '纯属虚构'
+    },
+    tooltip : {
+        trigger: 'axis'
+    },
+    legend: {
+        data:['人数']
+    },
+    toolbox: {
+        show : true,
+        feature : {
+            mark : {show: true},
+            dataView : {show: true, readOnly: false},
+            magicType : {show: true, type: ['line', 'bar']},
+            restore : {show: true},
+            saveAsImage : {show: true}
+        }
+    },
+    calculable : true,
+    xAxis : [
+        {
+            type : 'category',
+            data : dates
+        }
+    ],
+    yAxis : [
+        {
+            type : 'value'
+        }
+    ],
+    series : [
+        {
+			
+            name:'每半小时人数统计',
+            type:'bar',
+            data:count,
+            markPoint : {
+                data : [
+                    {type : 'max', name: '最大值'},
+                    {type : 'min', name: '最小值'}
+                ]
+            },
+            markLine : {
+                data : [
+                    {type : 'average', name: '平均值'}
+                ]
+            }
+        },
+    ]
+};
+// 使用刚指定的配置项和数据显示图表。
+Chart2.setOption(option2);
+</script>
+
+{% endblock %}
+
+
