@@ -1,8 +1,10 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template,jsonify
 from model import Info, Input
 import asyncio
 from orm import create_pool
-
+from connect import socketOpen
+import threading
+import json
 
 def count(list):
     time = []
@@ -75,36 +77,45 @@ async def compare(loop):
 app = Flask(__name__)
 
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET","POST"])
 def index():
+    method=request.method
+    print(method)
+    # data=socketOpen()
+    # print(data)
+    # threading.Thread(target=socketOpen,args=())
     loop1 = asyncio.new_event_loop()
     asyncio.set_event_loop(loop1)
     coroutine = compare(loop1)
     task = asyncio.ensure_future(coroutine)
     loop1.run_until_complete(task)
-    valid_persons, unvalid_persons, allnumber, validnumber, count1, time = task.result(
-    )
-    return render_template(
-        "table1.html",
-        valid_persons=valid_persons,
-        unvalid_persons=unvalid_persons,
-        allnumber=allnumber,
-        validnumber=validnumber,
-        count=count1,
-        time=time)
+    valid_persons, unvalid_persons, allnumber, validnumber, count1, time = task.result()
+    
+    if(method=="GET"):
+        return render_template(
+            "table1.html",
+            valid_persons=valid_persons,
+            unvalid_persons=unvalid_persons,
+            allnumber=allnumber,
+            validnumber=validnumber,
+            count=count1,
+            time=time)
+    if(method=="POST"):
+        dic={"valid_persons":valid_persons,"unvalid_persons":unvalid_persons,"allnumber":allnumber,"validnumber":validnumber,"count":count1,"time":time}
+        print("nmsl")
+        return jsonify(dic)
 
-
-@app.route("/", methods=["POST"])
+@app.route("/ajax", methods=["GET","POST"])
 def update():
-    print("zzh")
+    print("nmsl")
     loop1 = asyncio.new_event_loop()
     asyncio.set_event_loop(loop1)
     coroutine1 = compare(loop1)
     task = asyncio.ensure_future(coroutine1)
     loop1.run_until_complete(task)
     valid_persons, unvalid_persons, allnumber, validnumber = task.result()
-    
-    return "zzh"
+    print(valid_persons)
+    return "nmsl"
 
 
 if __name__ == "__main__":
